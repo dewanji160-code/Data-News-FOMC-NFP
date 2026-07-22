@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>USD News Predictor Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f1a;
+  --sidebar:#0a0e18;
+  --panel:#131a2b;
+  --panel-2:#161d31;
+  --line:#232b40;
+  --text:#e9ecf5;
+  --muted:#8891a8;
+  --muted-2:#5d6580;
+  --blue:#4f8bff;
+  --blue-dim:rgba(79,139,255,.12);
+  --green:#22c55e;
+  --green-dim:rgba(34,197,94,.12);
+  --red:#f04652;
+  --red-dim:rgba(240,70,82,.12);
+  --grey:#8b93a8;
+  --grey-dim:rgba(139,147,168,.12);
+  --purple:#7c5cff;
+  --font:"Inter",sans-serif;
+  --mono:"JetBrains Mono",monospace;
+  --radius:12px;
+}
+[data-theme="light"]{
+  --bg:#eef1f7;
+  --sidebar:#ffffff;
+  --panel:#ffffff;
+  --panel-2:#f4f6fb;
+  --line:#e1e5ef;
+  --text:#1a2033;
+  --muted:#6b7387;
+  --muted-2:#9aa1b5;
+  --blue-dim:rgba(79,139,255,.1);
+  --green-dim:rgba(34,197,94,.1);
+  --red-dim:rgba(240,70,82,.1);
+  --grey-dim:rgba(139,147,168,.1);
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--font);}
+body{display:flex;min-height:100vh;}
+::selection{background:var(--blue);color:#fff;}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
+button,input{font-family:inherit;}
+a{color:inherit;}
+
+/* ---------- Sidebar ---------- */
+.sidebar{
+  width:220px;flex-shrink:0;background:var(--sidebar);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;padding:22px 14px;position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.brand{padding:6px 10px 22px;}
+.brand__title{font-weight:800;font-size:19px;letter-spacing:-.01em;}
+.brand__title b{color:var(--blue);}
+.brand__sub{font-size:10px;letter-spacing:.18em;color:var(--muted);margin-top:2px;font-weight:600;}
+
+.navgroup{display:flex;flex-direction:column;gap:2px;flex:1;}
+.navitem{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:none;background:none;
+  color:var(--muted);font-size:13.5px;font-weight:500;cursor:pointer;text-align:left;width:100%;
+  transition:background .15s ease,color .15s ease;
+}
+.navitem .ic{width:18px;text-align:center;font-size:15px;}
+.navitem:hover{background:var(--panel-2);color:var(--text);}
+.navitem.active{background:var(--blue-dim);color:var(--blue);font-weight:700;}
+
+.sidebar__bottom{margin-top:16px;display:flex;flex-direction:column;gap:10px;}
+.savedCard{
+  border:1px solid var(--line);border-radius:10px;background:var(--panel-2);padding:14px;font-size:12px;
+}
+.savedCard__head{display:flex;align-items:center;gap:8px;color:var(--muted);font-weight:600;margin-bottom:8px;}
+.savedCard__month{font-weight:700;font-size:13px;margin-bottom:4px;}
+.savedCard__range{display:flex;align-items:center;gap:6px;color:var(--muted);}
+.badge{
+  font-size:9.5px;font-weight:700;background:var(--green-dim);color:var(--green);padding:2px 6px;border-radius:20px;letter-spacing:.03em;
+}
+.btn-primary{
+  background:var(--blue);color:#fff;border:none;border-radius:8px;padding:10px 12px;font-weight:700;font-size:12.5px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:filter .15s ease;
+}
+.btn-primary:hover{filter:brightness(1.1);}
+
+/* ---------- Main ---------- */
+.main{flex:1;min-width:0;padding:22px clamp(16px,3vw,32px) 60px;}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+.dateChip{
+  display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel);
+  padding:8px 14px;border-radius:8px;font-size:13px;color:var(--muted);
+}
+.themeToggle{
+  display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel);
+  padding:8px 14px;border-radius:8px;font-size:13px;cursor:pointer;color:var(--text);
+}
+
+.view{display:none;flex-direction:column;gap:18px;}
+.view.active{display:flex;}
+
+/* ---------- Top cards ---------- */
+.topRow{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:16px;}
+@media(max-width:900px){.topRow{grid-template-columns:1fr;}}
+.card{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:18px;}
+.card__label{font-size:11.5px;font-weight:700;letter-spacing:.05em;color:var(--muted);text-transform:uppercase;margin-bottom:4px;}
+
+/* gauge */
+.gaugeCard{display:flex;flex-direction:column;align-items:center;}
+.gaugeCard .card__label{align-self:flex-start;}
+.gaugeWrap{position:relative;width:100%;max-width:280px;margin-top:4px;}
+.gaugeLabels{display:flex;justify-content:space-between;font-size:10px;font-weight:700;letter-spacing:.04em;margin-top:-8px;padding:0 6px;}
+.gaugeLabels .l{color:var(--red);}
+.gaugeLabels .r{color:var(--green);}
+.gaugeCenter{text-align:center;margin-top:-14px;}
+.gaugeCenter .big{font-size:26px;font-weight:800;letter-spacing:-.02em;}
+.gaugeCenter .sub{font-size:12px;color:var(--muted);margin-top:2px;}
+
+.scoreCard{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.scoreCard__value{font-size:34px;font-weight:800;margin:6px 0 2px;letter-spacing:-.02em;}
+.scoreCard__sub{font-size:12.5px;font-weight:600;}
+.scoreIcon{
+  width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:22px;flex-shrink:0;
+}
+
+/* stats strip */
+.statsStrip{
+  display:flex;align-items:center;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);
+  padding:14px 22px;gap:34px;flex-wrap:wrap;
+}
+.statItem{display:flex;align-items:center;gap:10px;}
+.statItem .ic{
+  width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;
+}
+.statItem .val{font-weight:800;font-size:15px;}
+.statItem .lbl{font-size:11px;color:var(--muted);}
+
+/* tables */
+.tablesRow{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:980px){.tablesRow{grid-template-columns:1fr;}}
+.tableCard{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);overflow:hidden;display:flex;flex-direction:column;}
+.tableCard__head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);
+}
+.tableCard__title{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;}
+.tableCard__title .ic{
+  width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;
+}
+.tableScroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:480px;}
+thead th{
+  text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;
+  padding:9px 10px;border-bottom:1px solid var(--line);background:var(--panel-2);
+}
+tbody td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+.idxCol{color:var(--muted-2);width:22px;}
+.newsCell{display:flex;align-items:center;gap:6px;min-width:150px;}
+.newsCell input{
+  background:transparent;border:none;color:var(--text);font-size:12.5px;font-weight:500;width:100%;padding:2px 0;
+}
+.newsCell input:focus{outline:none;border-bottom:1px solid var(--blue);}
+.valInput{
+  background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:5px;padding:5px 7px;
+  font-family:var(--mono);font-size:12px;width:74px;
+}
+.valInput:focus{outline:none;border-color:var(--blue);}
+.dot{width:11px;height:11px;border-radius:50%;display:inline-block;}
+.dot--up{background:var(--green);}
+.dot--down{background:var(--red);}
+.dot--neutral{background:var(--grey);}
+.resultCell{display:flex;align-items:center;gap:8px;}
+.dirBtn{
+  border:1px solid var(--line);background:var(--panel-2);color:var(--muted);border-radius:5px;width:22px;height:22px;
+  font-size:11px;cursor:pointer;flex-shrink:0;
+}
+.dirBtn:hover{color:var(--text);border-color:var(--muted-2);}
+.scoreCell{font-family:var(--mono);font-weight:700;}
+.scoreCell.up{color:var(--green);}
+.scoreCell.down{color:var(--red);}
+.scoreCell.neutral{color:var(--grey);}
+.delCell{width:26px;}
+.iconBtn{background:none;border:none;color:var(--muted-2);cursor:pointer;font-size:13px;padding:4px;border-radius:4px;}
+.iconBtn:hover{color:var(--red);background:var(--red-dim);}
+.addRowBar{padding:10px 16px;}
+.addRowBtn{
+  border:1px dashed var(--line);background:none;color:var(--muted);border-radius:6px;padding:7px 12px;font-size:12px;
+  cursor:pointer;width:100%;
+}
+.addRowBtn:hover{color:var(--blue);border-color:var(--blue);}
+
+.tableFoot{display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid var(--line);}
+.footBox{
+  flex:1;border-radius:9px;padding:10px 14px;display:flex;flex-direction:column;gap:2px;
+}
+.footBox .k{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);}
+.footBox .v{font-size:18px;font-weight:800;}
+.footBox.biasBox{flex-direction:row;align-items:center;justify-content:space-between;}
+.footBox.biasBox .v{font-size:13px;display:flex;align-items:center;gap:6px;}
+
+/* bottom info boxes */
+.infoRow{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:16px;}
+@media(max-width:980px){.infoRow{grid-template-columns:1fr;}}
+.infoCard{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:16px 18px;}
+.infoCard__title{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px;margin-bottom:10px;}
+.infoCard p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.6;}
+.legendRow{display:flex;align-items:center;gap:10px;font-size:12.5px;padding:5px 0;}
+.legendRow b{margin-left:auto;font-family:var(--mono);}
+.guideBar{display:flex;border-radius:8px;overflow:hidden;height:8px;margin:10px 0 8px;}
+.guideBar span{flex:1;}
+.guideLabels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);}
+.guideLabels div{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.guideLabels b{font-size:11px;color:var(--text);}
+
+/* history */
+.histEntry{
+  border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:14px 18px;
+  display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+}
+.histEntry__date{font-size:12px;color:var(--muted);}
+.histEntry__bias{font-weight:700;font-size:14px;margin-top:2px;}
+.histEntry__scores{display:flex;gap:16px;font-family:var(--mono);font-size:13px;}
+.empty{color:var(--muted);text-align:center;padding:30px;border:1px dashed var(--line);border-radius:10px;font-size:13px;}
+
+.simpleCard{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:22px;}
+.simpleCard h3{margin:0 0 10px;font-size:16px;}
+.simpleCard p{color:var(--muted);font-size:13.5px;line-height:1.7;}
+
+.stack{display:flex;flex-direction:column;gap:12px;}
+.settingsRow{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--line);}
+.settingsRow:last-child{border-bottom:none;}
+.settingsRow div b{display:block;font-size:13.5px;}
+.settingsRow div span{font-size:12px;color:var(--muted);}
+.dangerBtn{background:var(--red-dim);color:var(--red);border:1px solid rgba(240,70,82,.3);border-radius:7px;padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand__title"><b>USD News</b></div>
+    <div class="brand__sub">PREDICTOR PRO</div>
+  </div>
+  <nav class="navgroup">
+    <button class="navitem active" data-tab="dashboard"><span class="ic">🏠</span> Dashboard</button>
+    <button class="navitem" data-tab="nfp"><span class="ic">👥</span> NFP Prediction</button>
+    <button class="navitem" data-tab="fomc"><span class="ic">🏛️</span> FOMC Prediction</button>
+    <button class="navitem" data-tab="calendar"><span class="ic">📅</span> Calendar</button>
+    <button class="navitem" data-tab="history"><span class="ic">🕒</span> History</button>
+    <button class="navitem" data-tab="stats"><span class="ic">📊</span> Statistics</button>
+    <button class="navitem" data-tab="settings"><span class="ic">⚙️</span> Settings</button>
+    <button class="navitem" data-tab="about"><span class="ic">ℹ️</span> About</button>
+  </nav>
+  <div class="sidebar__bottom">
+    <div class="savedCard">
+      <div class="savedCard__head">📁 Saved Prediction</div>
+      <div class="savedCard__month" id="saved-month">—</div>
+      <div class="savedCard__range"><span id="saved-range">Belum ada snapshot</span></div>
+    </div>
+    <button class="btn-primary" id="btn-new-prediction">➕ New Prediction</button>
+  </div>
+</aside>
+
+<div class="main">
+
+  <div class="topbar">
+    <div class="dateChip">📅 Today : <span id="today-date"></span></div>
+    <button class="themeToggle" id="themeToggle">🌙 <span id="themeLabel">Dark</span></button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <section class="view active" id="view-dashboard">
+
+    <div class="topRow">
+      <div class="card gaugeCard">
+        <div class="card__label">USD Bias Meter</div>
+        <div class="gaugeWrap">
+          <svg viewBox="0 0 200 112" width="100%">
+            <defs>
+              <linearGradient id="gaugeGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#f04652"/>
+                <stop offset="50%" stop-color="#8b93a8"/>
+                <stop offset="100%" stop-color="#22c55e"/>
+              </linearGradient>
+            </defs>
+            <path d="M20,100 A80,80 0 0 1 180,100" fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round"/>
+            <line id="needle" x1="100" y1="100" x2="100" y2="34" stroke="var(--text)" stroke-width="3" stroke-linecap="round" style="transform-origin:100px 100px;"/>
+            <circle cx="100" cy="100" r="6" fill="var(--text)"/>
+          </svg>
+          <div class="gaugeLabels"><span class="l">BEARISH</span><span class="r">BULLISH</span></div>
+        </div>
+        <div class="gaugeCenter">
+          <div class="big" id="gauge-bigtext">NEUTRAL</div>
+          <div class="sub" id="gauge-subtext">USD Netral</div>
+        </div>
+      </div>
+
+      <div class="card scoreCard">
+        <div>
+          <div class="card__label" style="color:var(--purple)">NFP Total Score</div>
+          <div class="scoreCard__value" id="nfp-total-score">0</div>
+          <div class="scoreCard__sub" id="nfp-total-sub">USD Netral</div>
+        </div>
+        <div class="scoreIcon" style="background:rgba(124,92,255,.15);color:var(--purple)">👥</div>
+      </div>
+
+      <div class="card scoreCard">
+        <div>
+          <div class="card__label" style="color:var(--blue)">FOMC Total Score</div>
+          <div class="scoreCard__value" id="fomc-total-score">0</div>
+          <div class="scoreCard__sub" id="fomc-total-sub">USD Netral</div>
+        </div>
+        <div class="scoreIcon" style="background:var(--blue-dim);color:var(--blue)">🏛️</div>
+      </div>
+    </div>
+
+    <div class="statsStrip">
+      <div class="statItem"><span class="ic" style="background:var(--blue-dim);color:var(--blue)">📋</span><div><div class="val" id="stat-total">0</div><div class="lbl">Total Indicators</div></div></div>
+      <div class="statItem"><span class="ic" style="background:var(--green-dim);color:var(--green)">▲</span><div><div class="val" id="stat-pos">0</div><div class="lbl">Positive</div></div></div>
+      <div class="statItem"><span class="ic" style="background:var(--red-dim);color:var(--red)">▼</span><div><div class="val" id="stat-neg">0</div><div class="lbl">Negative</div></div></div>
+      <div class="statItem"><span class="ic" style="background:var(--grey-dim);color:var(--grey)">➖</span><div><div class="val" id="stat-neu">0</div><div class="lbl">Neutral</div></div></div>
+      <div class="statItem"><span class="ic" style="background:var(--panel-2);color:var(--muted)">🕒</span><div><div class="val" id="stat-updated" style="font-size:12.5px;">—</div><div class="lbl">Last Updated</div></div></div>
+    </div>
+
+    <div class="tablesRow">
+      <div class="tableCard">
+        <div class="tableCard__head">
+          <div class="tableCard__title"><span class="ic" style="background:rgba(124,92,255,.15);color:var(--purple)">👥</span> NFP Prediction</div>
+        </div>
+        <div class="tableScroll"><table>
+          <thead><tr><th>#</th><th>News</th><th>Actual</th><th>Forecast</th><th>Result</th><th>Score</th></tr></thead>
+          <tbody id="dash-nfp-tbody"></tbody>
+        </table></div>
+        <div class="tableFoot">
+          <div class="footBox" id="dash-nfp-scorebox"><span class="k">Total Score</span><span class="v" id="dash-nfp-score">+0</span></div>
+          <div class="footBox biasBox" id="dash-nfp-biasbox"><span class="k">Bias NFP</span><span class="v" id="dash-nfp-bias">USD Netral</span></div>
+        </div>
+      </div>
+
+      <div class="tableCard">
+        <div class="tableCard__head">
+          <div class="tableCard__title"><span class="ic" style="background:var(--blue-dim);color:var(--blue)">🏛️</span> FOMC Prediction</div>
+        </div>
+        <div class="tableScroll"><table>
+          <thead><tr><th>#</th><th>News</th><th>Actual</th><th>Forecast</th><th>Result</th><th>Score</th></tr></thead>
+          <tbody id="dash-fomc-tbody"></tbody>
+        </table></div>
+        <div class="tableFoot">
+          <div class="footBox" id="dash-fomc-scorebox"><span class="k">Total Score</span><span class="v" id="dash-fomc-score">+0</span></div>
+          <div class="footBox biasBox" id="dash-fomc-biasbox"><span class="k">Bias FOMC</span><span class="v" id="dash-fomc-bias">USD Netral</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="infoRow">
+      <div class="infoCard">
+        <div class="infoCard__title">💡 Tips</div>
+        <p>Semakin tinggi score positif, semakin besar peluang USD menguat. Semakin rendah score (negatif), semakin besar peluang USD melemah.</p>
+      </div>
+      <div class="infoCard">
+        <div class="infoCard__title">📋 Legend</div>
+        <div class="legendRow"><span class="dot dot--up"></span> Good / Better Than Forecast <b>= +1</b></div>
+        <div class="legendRow"><span class="dot dot--down"></span> Bad / Worse Than Forecast <b>= −1</b></div>
+        <div class="legendRow"><span class="dot dot--neutral"></span> Neutral / In Line With Forecast <b>= 0</b></div>
+      </div>
+      <div class="infoCard">
+        <div class="infoCard__title">📈 USD Bias Meter Guide</div>
+        <div class="guideBar">
+          <span style="background:#f04652"></span><span style="background:#f0808a"></span><span style="background:#8b93a8"></span><span style="background:#7fdba0"></span><span style="background:#22c55e"></span>
+        </div>
+        <div class="guideLabels">
+          <div><b>-5</b>Strong Bearish</div>
+          <div><b>-3</b>Bearish</div>
+          <div><b>0</b>Neutral</div>
+          <div><b>+3</b>Bullish</div>
+          <div><b>+5</b>Strong Bullish</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NFP standalone -->
+  <section class="view" id="view-nfp">
+    <div class="tableCard">
+      <div class="tableCard__head">
+        <div class="tableCard__title"><span class="ic" style="background:rgba(124,92,255,.15);color:var(--purple)">👥</span> NFP Prediction — Edit Data</div>
+      </div>
+      <div class="tableScroll"><table>
+        <thead><tr><th>#</th><th>News</th><th>Actual</th><th>Forecast</th><th>Arah</th><th>Result</th><th>Score</th><th></th></tr></thead>
+        <tbody id="full-nfp-tbody"></tbody>
+      </table></div>
+      <div class="addRowBar"><button class="addRowBtn" data-add="nfp">+ Tambah indikator NFP</button></div>
+      <div class="tableFoot">
+        <div class="footBox" id="full-nfp-scorebox"><span class="k">Total Score</span><span class="v" id="full-nfp-score">+0</span></div>
+        <div class="footBox biasBox" id="full-nfp-biasbox"><span class="k">Bias NFP</span><span class="v" id="full-nfp-bias">USD Netral</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOMC standalone -->
+  <section class="view" id="view-fomc">
+    <div class="tableCard">
+      <div class="tableCard__head">
+        <div class="tableCard__title"><span class="ic" style="background:var(--blue-dim);color:var(--blue)">🏛️</span> FOMC Prediction — Edit Data</div>
+      </div>
+      <div class="tableScroll"><table>
+        <thead><tr><th>#</th><th>News</th><th>Actual</th><th>Forecast</th><th>Arah</th><th>Result</th><th>Score</th><th></th></tr></thead>
+        <tbody id="full-fomc-tbody"></tbody>
+      </table></div>
+      <div class="addRowBar"><button class="addRowBtn" data-add="fomc">+ Tambah indikator FOMC</button></div>
+      <div class="tableFoot">
+        <div class="footBox" id="full-fomc-scorebox"><span class="k">Total Score</span><span class="v" id="full-fomc-score">+0</span></div>
+        <div class="footBox biasBox" id="full-fomc-biasbox"><span class="k">Bias FOMC</span><span class="v" id="full-fomc-bias">USD Netral</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALENDAR -->
+  <section class="view" id="view-calendar">
+    <div class="simpleCard">
+      <h3>📅 Calendar</h3>
+      <p>Daftar tanggal snapshot yang pernah kamu simpan muncul di sini sebagai pengingat jadwal rilis data.</p>
+      <div class="stack" id="calendar-list" style="margin-top:10px;"></div>
+    </div>
+  </section>
+
+  <!-- HISTORY -->
+  <section class="view" id="view-history">
+    <div class="tableCard">
+      <div class="tableCard__head">
+        <div class="tableCard__title">🕒 History</div>
+        <div style="display:flex;gap:8px;">
+          <button class="addRowBtn" style="width:auto;padding:8px 14px;" id="hist-export">Ekspor JSON</button>
+          <button class="btn-primary" id="hist-save">➕ Simpan snapshot</button>
+        </div>
+      </div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:10px;" id="history-list"></div>
+    </div>
+  </section>
+
+  <!-- STATISTICS -->
+  <section class="view" id="view-stats">
+    <div class="topRow" style="grid-template-columns:repeat(4,1fr);">
+      <div class="card"><div class="card__label">Total Snapshot</div><div class="scoreCard__value" id="st-snapshots">0</div></div>
+      <div class="card"><div class="card__label">Rata² Score NFP</div><div class="scoreCard__value" id="st-avg-nfp">0</div></div>
+      <div class="card"><div class="card__label">Rata² Score FOMC</div><div class="scoreCard__value" id="st-avg-fomc">0</div></div>
+      <div class="card"><div class="card__label">Bias Dominan</div><div class="scoreCard__value" id="st-dominant" style="font-size:20px;">—</div></div>
+    </div>
+    <div class="simpleCard">
+      <h3>Ringkasan</h3>
+      <p>Statistik dihitung dari seluruh snapshot yang tersimpan di tab History. Simpan snapshot secara rutin setiap ada rilis data baru supaya statistik makin akurat.</p>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="view" id="view-settings">
+    <div class="simpleCard">
+      <h3>⚙️ Settings</h3>
+      <div class="settingsRow">
+        <div><b>Tema tampilan</b><span>Beralih antara mode gelap dan terang</span></div>
+        <button class="addRowBtn" style="width:auto;padding:8px 14px;" id="settings-theme-btn">Ganti ke Light</button>
+      </div>
+      <div class="settingsRow">
+        <div><b>Reset semua data</b><span>Hapus seluruh prediksi &amp; history secara permanen</span></div>
+        <button class="dangerBtn" id="btn-reset">Reset Data</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="view" id="view-about">
+    <div class="simpleCard">
+      <h3>ℹ️ Tentang USD News Predictor Pro</h3>
+      <p>Alat bantu pribadi untuk mencatat prediksi vs aktual dari indikator ekonomi NFP dan FOMC, lalu menghitung bias USD berdasarkan selisih data aktual terhadap forecast. Semua data tersimpan di browser (localStorage) — gunakan fitur ekspor/impor untuk backup.</p>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(() => {
+  const STORAGE_KEY = "usdPredictorPro.v1";
+  const uid = () => Math.random().toString(36).slice(2,9)+Date.now().toString(36);
+
+  function mkItem(name, actual, forecast, direction="higher"){
+    return { id: uid(), name, actual, forecast, direction };
+  }
+
+  const DEFAULTS = {
+    theme: "dark",
+    nfp: [
+      mkItem("ADP Non-Farm Employment Change","150K","120K","higher"),
+      mkItem("JOLTS Job Openings","8.10M","8.50M","higher"),
+      mkItem("Initial Jobless Claims","235K","235K","lower"),
+      mkItem("Continuing Claims","1.85M","1.90M","lower"),
+      mkItem("ISM Manufacturing Employment","48.7","47.0","higher"),
+      mkItem("ISM Services Employment","51.3","51.3","higher"),
+    ],
+    fomc: [
+      mkItem("Core PCE Price Index m/m","0.2%","0.3%","higher"),
+      mkItem("PCE Price Index m/m","0.1%","0.2%","higher"),
+      mkItem("Core CPI m/m","0.2%","0.3%","higher"),
+      mkItem("CPI m/m","-0.1%","0.1%","higher"),
+      mkItem("Core PPI m/m","0.1%","0.0%","higher"),
+      mkItem("PPI m/m","-0.2%","0.1%","higher"),
+      mkItem("Core Retail Sales m/m","-0.3%","0.1%","higher"),
+      mkItem("Retail Sales m/m","0.0%","0.0%","higher"),
+      mkItem("GDP q/q","1.4%","1.6%","higher"),
+      mkItem("ISM Manufacturing PMI","48.8","49.5","higher"),
+      mkItem("ISM Services PMI","50.2","50.0","higher"),
+    ],
+    history: []
+  };
+
+  let state = load();
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return structuredClone(DEFAULTS);
+      const p = JSON.parse(raw);
+      return {
+        theme: p.theme || "dark",
+        nfp: p.nfp?.length ? p.nfp : structuredClone(DEFAULTS.nfp),
+        fomc: p.fomc?.length ? p.fomc : structuredClone(DEFAULTS.fomc),
+        history: p.history || []
+      };
+    }catch(e){ console.error("load error",e); return structuredClone(DEFAULTS); }
+  }
+  function save(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    catch(e){ console.error("save error",e); }
+  }
+
+  function parseVal(str){
+    if(str===undefined || str===null) return null;
+    let s = String(str).trim();
+    if(s==="") return null;
+    let mult = 1;
+    if(/K$/i.test(s)){ mult=1000; s=s.replace(/K$/i,""); }
+    else if(/M$/i.test(s)){ mult=1000000; s=s.replace(/M$/i,""); }
+    s = s.replace("%","");
+    const n = parseFloat(s);
+    return isNaN(n) ? null : n*mult;
+  }
+
+  function computeResult(item){
+    const a = parseVal(item.actual);
+    const f = parseVal(item.forecast);
+    if(a===null || f===null) return 0;
+    const tol = Math.max(1e-9, Math.abs(f)*0.0005);
+    const diff = a - f;
+    if(Math.abs(diff) <= tol) return 0;
+    if(diff > 0) return item.direction==="higher" ? 1 : -1;
+    return item.direction==="higher" ? -1 : 1;
+  }
+
+  function scoreOf(list){ return list.reduce((s,i)=> s + computeResult(i), 0); }
+
+  function biasOf(score){
+    if(score >= 4) return {text:"Strong Bullish", short:"USD Menguat Kuat", cls:"up"};
+    if(score >= 1) return {text:"Bullish", short:"USD Menguat", cls:"up"};
+    if(score <= -4) return {text:"Strong Bearish", short:"USD Melemah Kuat", cls:"down"};
+    if(score <= -1) return {text:"Bearish", short:"USD Melemah", cls:"down"};
+    return {text:"Neutral", short:"USD Netral", cls:"neutral"};
+  }
+  const CLR = {up:"var(--green)", down:"var(--red)", neutral:"var(--grey)"};
+  const DIM = {up:"var(--green-dim)", down:"var(--red-dim)", neutral:"var(--grey-dim)"};
+  function fmt(n){ return (n>0?"+":"") + n; }
+  function escapeHtml(str){ const d=document.createElement("div"); d.textContent=str??""; return d.innerHTML; }
+
+  // ---------- Render tables ----------
+  function renderTable(type, tbodyId, editable){
+    const tbody = document.getElementById(tbodyId);
+    tbody.innerHTML = "";
+    state[type].forEach((item, idx) => {
+      const r = computeResult(item);
+      const cls = r>0?"up":r<0?"down":"neutral";
+      const tr = document.createElement("tr");
+      if(editable){
+        tr.innerHTML = `
+          <td class="idxCol">${idx+1}</td>
+          <td><div class="newsCell"><input type="text" value="${escapeHtml(item.name)}" data-id="${item.id}" data-type="${type}" data-field="name"></div></td>
+          <td><input class="valInput" type="text" value="${escapeHtml(item.actual)}" data-id="${item.id}" data-type="${type}" data-field="actual"></td>
+          <td><input class="valInput" type="text" value="${escapeHtml(item.forecast)}" data-id="${item.id}" data-type="${type}" data-field="forecast"></td>
+          <td><button class="dirBtn" data-dir="${item.id}" data-type="${type}" title="Arah: ${item.direction==='higher'?'Lebih tinggi = bagus':'Lebih rendah = bagus'}">${item.direction==='higher'?'↑':'↓'}</button></td>
+          <td><span class="dot dot--${cls}"></span></td>
+          <td class="scoreCell ${cls}">${fmt(r)}</td>
+          <td class="delCell"><button class="iconBtn" data-del="${item.id}" data-type="${type}" title="Hapus">✕</button></td>
+        `;
+      } else {
+        tr.innerHTML = `
+          <td class="idxCol">${idx+1}</td>
+          <td>${escapeHtml(item.name)}</td>
+          <td style="font-family:var(--mono)">${escapeHtml(item.actual)}</td>
+          <td style="font-family:var(--mono)">${escapeHtml(item.forecast)}</td>
+          <td><span class="dot dot--${cls}"></span></td>
+          <td class="scoreCell ${cls}">${fmt(r)}</td>
+        `;
+      }
+      tbody.appendChild(tr);
+    });
+  }
+
+  function updateFootAndBox(prefix, type){
+    const score = scoreOf(state[type]);
+    const bias = biasOf(score);
+    const scoreEl = document.getElementById(`${prefix}-${type}-score`);
+    if(scoreEl){ scoreEl.textContent = fmt(score); scoreEl.style.color = CLR[bias.cls]; }
+    const biasEl = document.getElementById(`${prefix}-${type}-bias`);
+    if(biasEl){ biasEl.textContent = bias.short; biasEl.style.color = CLR[bias.cls]; }
+    const scoreBox = document.getElementById(`${prefix}-${type}-scorebox`);
+    if(scoreBox) scoreBox.style.background = DIM[bias.cls];
+    const biasBox = document.getElementById(`${prefix}-${type}-biasbox`);
+    if(biasBox) biasBox.style.background = DIM[bias.cls];
+  }
+
+  function renderGauge(){
+    const nfpScore = scoreOf(state.nfp);
+    const fomcScore = scoreOf(state.fomc);
+    const total = nfpScore + fomcScore;
+    const clamped = Math.max(-5, Math.min(5, total));
+    const angle = (clamped/5)*90;
+    document.getElementById("needle").setAttribute("transform", `rotate(${angle} 100 100)`);
+    const bias = biasOf(total);
+    document.getElementById("gauge-bigtext").textContent = bias.text.toUpperCase();
+    document.getElementById("gauge-bigtext").style.color = CLR[bias.cls];
+    document.getElementById("gauge-subtext").textContent = bias.short;
+  }
+
+  function renderScoreCards(){
+    ["nfp","fomc"].forEach(type=>{
+      const score = scoreOf(state[type]);
+      const bias = biasOf(score);
+      const valEl = document.getElementById(`${type}-total-score`);
+      valEl.textContent = fmt(score);
+      valEl.style.color = CLR[bias.cls];
+      document.getElementById(`${type}-total-sub`).textContent = bias.short;
+      document.getElementById(`${type}-total-sub`).style.color = CLR[bias.cls];
+    });
+  }
+
+  function renderStatsStrip(){
+    const all = [...state.nfp, ...state.fomc];
+    let pos=0, neg=0, neu=0;
+    all.forEach(i=>{ const r=computeResult(i); if(r>0)pos++; else if(r<0)neg++; else neu++; });
+    document.getElementById("stat-total").textContent = all.length;
+    document.getElementById("stat-pos").textContent = pos;
+    document.getElementById("stat-neg").textContent = neg;
+    document.getElementById("stat-neu").textContent = neu;
+    const now = new Date();
+    document.getElementById("stat-updated").textContent = now.toLocaleDateString("id-ID",{day:"2-digit",month:"short",year:"numeric"}) + " " + now.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"});
+  }
+
+  function renderSavedCard(){
+    const h = state.history;
+    if(h.length===0){
+      document.getElementById("saved-month").textContent = "Belum ada data";
+      document.getElementById("saved-range").textContent = "Simpan snapshot pertamamu";
+      return;
+    }
+    const last = h[h.length-1];
+    document.getElementById("saved-month").textContent = last.monthLabel || "—";
+    document.getElementById("saved-range").innerHTML = `${escapeHtml(last.date)} <span class="badge">Latest</span>`;
+  }
+
+  function renderHistory(){
+    const list = document.getElementById("history-list");
+    if(state.history.length===0){
+      list.innerHTML = `<div class="empty">Belum ada snapshot. Klik "Simpan snapshot" untuk mencatat bias &amp; score hari ini.</div>`;
+      return;
+    }
+    list.innerHTML = "";
+    [...state.history].reverse().forEach(h=>{
+      const bias = biasOf(h.total);
+      const div = document.createElement("div");
+      div.className = "histEntry";
+      div.innerHTML = `
+        <div>
+          <div class="histEntry__date">${escapeHtml(h.date)}</div>
+          <div class="histEntry__bias" style="color:${CLR[bias.cls]}">${bias.text} — ${bias.short}</div>
+        </div>
+        <div class="histEntry__scores">
+          <span>NFP <b style="color:${CLR[biasOf(h.nfpScore).cls]}">${fmt(h.nfpScore)}</b></span>
+          <span>FOMC <b style="color:${CLR[biasOf(h.fomcScore).cls]}">${fmt(h.fomcScore)}</b></span>
+          <span>Total <b style="color:${CLR[bias.cls]}">${fmt(h.total)}</b></span>
+        </div>
+        <button class="iconBtn" data-delhist="${h.id}" title="Hapus snapshot">✕</button>
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  function renderCalendar(){
+    const list = document.getElementById("calendar-list");
+    if(state.history.length===0){
+      list.innerHTML = `<div class="empty">Belum ada tanggal tersimpan.</div>`;
+      return;
+    }
+    list.innerHTML = [...state.history].reverse().map(h=>`
+      <div class="histEntry"><div class="histEntry__date">${escapeHtml(h.date)}</div><div class="histEntry__bias" style="color:${CLR[biasOf(h.total).cls]}">${biasOf(h.total).text}</div></div>
+    `).join("");
+  }
+
+  function renderStats(){
+    document.getElementById("st-snapshots").textContent = state.history.length;
+    if(state.history.length===0){
+      document.getElementById("st-avg-nfp").textContent = "0";
+      document.getElementById("st-avg-fomc").textContent = "0";
+      document.getElementById("st-dominant").textContent = "—";
+      return;
+    }
+    const avgNfp = state.history.reduce((s,h)=>s+h.nfpScore,0)/state.history.length;
+    const avgFomc = state.history.reduce((s,h)=>s+h.fomcScore,0)/state.history.length;
+    document.getElementById("st-avg-nfp").textContent = avgNfp.toFixed(1);
+    document.getElementById("st-avg-fomc").textContent = avgFomc.toFixed(1);
+    const bullCount = state.history.filter(h=>h.total>0).length;
+    const bearCount = state.history.filter(h=>h.total<0).length;
+    document.getElementById("st-dominant").textContent = bullCount===bearCount ? "Netral" : (bullCount>bearCount ? "Bullish" : "Bearish");
+  }
+
+  function renderAll(){
+    renderTable("nfp","dash-nfp-tbody",false);
+    renderTable("fomc","dash-fomc-tbody",false);
+    renderTable("nfp","full-nfp-tbody",true);
+    renderTable("fomc","full-fomc-tbody",true);
+    updateFootAndBox("dash","nfp"); updateFootAndBox("dash","fomc");
+    updateFootAndBox("full","nfp"); updateFootAndBox("full","fomc");
+    renderGauge();
+    renderScoreCards();
+    renderStatsStrip();
+    renderSavedCard();
+    renderHistory();
+    renderCalendar();
+    renderStats();
+  }
+
+  // ---------- Events ----------
+  document.body.addEventListener("input",(e)=>{
+    if(e.target.matches("[data-field]")){
+      const {id,type,field} = e.target.dataset;
+      const item = state[type].find(i=>i.id===id);
+      if(item){ item[field] = e.target.value; save(); renderAll(); }
+    }
+  });
+
+  document.body.addEventListener("click",(e)=>{
+    const tabBtn = e.target.closest(".navitem");
+    if(tabBtn){
+      document.querySelectorAll(".navitem").forEach(b=>b.classList.remove("active"));
+      tabBtn.classList.add("active");
+      document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+      document.getElementById(`view-${tabBtn.dataset.tab}`).classList.add("active");
+      return;
+    }
+    const dirBtn = e.target.closest("[data-dir]");
+    if(dirBtn){
+      const {dir:id, type} = dirBtn.dataset;
+      const item = state[type].find(i=>i.id===id);
+      if(item){ item.direction = item.direction==="higher" ? "lower" : "higher"; save(); renderAll(); }
+      return;
+    }
+    const delBtn = e.target.closest("[data-del]");
+    if(delBtn){
+      const {del:id, type} = delBtn.dataset;
+      state[type] = state[type].filter(i=>i.id!==id);
+      save(); renderAll();
+      return;
+    }
+    const addBtn = e.target.closest("[data-add]");
+    if(addBtn){
+      const type = addBtn.dataset.add;
+      state[type].push(mkItem("Indikator baru","",""));
+      save(); renderAll();
+      return;
+    }
+    const delHist = e.target.closest("[data-delhist]");
+    if(delHist){
+      state.history = state.history.filter(h=>h.id!==delHist.dataset.delhist);
+      save(); renderAll();
+      return;
+    }
+    if(e.target.id==="hist-save" || e.target.id==="btn-new-prediction"){
+      const nfpScore = scoreOf(state.nfp);
+      const fomcScore = scoreOf(state.fomc);
+      const total = nfpScore + fomcScore;
+      const now = new Date();
+      state.history.push({
+        id: uid(),
+        date: now.toLocaleDateString("id-ID",{day:"2-digit",month:"short",year:"numeric"}) + " " + now.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"}),
+        monthLabel: now.toLocaleDateString("id-ID",{month:"long",year:"numeric"}),
+        nfpScore, fomcScore, total,
+        nfpSnapshot: structuredClone(state.nfp),
+        fomcSnapshot: structuredClone(state.fomc)
+      });
+      save(); renderAll();
+      alert("Snapshot disimpan.");
+      return;
+    }
+    if(e.target.id==="hist-export"){
+      const blob = new Blob([JSON.stringify(state,null,2)], {type:"application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `usd-predictor-${new Date().toISOString().slice(0,10)}.json`;
+      a.click(); URL.revokeObjectURL(url);
+      return;
+    }
+    if(e.target.id==="btn-reset"){
+      if(confirm("Yakin ingin menghapus semua data prediksi dan history?")){
+        state = structuredClone(DEFAULTS);
+        state.theme = document.documentElement.getAttribute("data-theme");
+        save(); renderAll();
+      }
+      return;
+    }
+    if(e.target.id==="settings-theme-btn" || e.target.closest("#themeToggle")){
+      toggleTheme();
+      return;
+    }
+  });
+
+  function toggleTheme(){
+    const html = document.documentElement;
+    const next = html.getAttribute("data-theme")==="dark" ? "light" : "dark";
+    html.setAttribute("data-theme", next);
+    state.theme = next;
+    save();
+    document.getElementById("themeLabel").textContent = next==="dark" ? "Dark" : "Light";
+    document.querySelector("#themeToggle").firstChild.textContent = next==="dark" ? "🌙 " : "☀️ ";
+    document.getElementById("settings-theme-btn").textContent = next==="dark" ? "Ganti ke Light" : "Ganti ke Dark";
+  }
+
+  // ---------- Init ----------
+  document.documentElement.setAttribute("data-theme", state.theme);
+  document.getElementById("themeLabel").textContent = state.theme==="dark" ? "Dark" : "Light";
+  document.getElementById("settings-theme-btn").textContent = state.theme==="dark" ? "Ganti ke Light" : "Ganti ke Dark";
+  document.getElementById("today-date").textContent = new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
+  renderAll();
+})();
+</script>
+</body>
+</html>
