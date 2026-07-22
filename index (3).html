@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>USD News Predictor Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0d11;
+  --panel:#10151b;
+  --panel-2:#151b22;
+  --line:#25303a;
+  --text:#e6edf3;
+  --muted:#7c8896;
+  --up:#3ddc84;
+  --down:#ff5c5c;
+  --neutral:#8a97a5;
+  --focus:#5eb1ff;
+  --font-mono:"JetBrains Mono",monospace;
+  --font-display:"Space Grotesk",sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--font-mono);min-height:100vh;}
+::selection{background:var(--up);color:#06110a;}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
+
+header.topbar{
+  display:flex;flex-direction:column;gap:14px;
+  padding:20px clamp(16px,4vw,40px);
+  border-bottom:1px solid var(--line);
+  position:sticky;top:0;background:rgba(10,13,17,.92);backdrop-filter:blur(6px);z-index:10;
+}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:700;font-size:19px;}
+.brand small{font-family:var(--font-mono);font-weight:400;color:var(--muted);font-size:12px;}
+
+nav.tabs{display:flex;gap:6px;flex-wrap:wrap;}
+nav.tabs button{
+  font-family:var(--font-mono);font-size:12.5px;letter-spacing:.03em;
+  background:var(--panel-2);border:1px solid var(--line);color:var(--muted);
+  padding:8px 16px;border-radius:4px;cursor:pointer;transition:.15s ease;
+}
+nav.tabs button:hover{border-color:#3a4854;color:var(--text);}
+nav.tabs button.active{background:var(--up);color:#06110a;border-color:var(--up);font-weight:700;}
+
+main{max-width:1000px;margin:0 auto;padding:clamp(16px,4vw,32px);}
+.view{display:none;flex-direction:column;gap:22px;}
+.view.active{display:flex;}
+
+/* box frame like the wireframe */
+.box{
+  border:1px solid var(--line);border-radius:6px;background:var(--panel);overflow:hidden;
+}
+.box__head{
+  padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel-2);
+  font-family:var(--font-display);font-weight:600;font-size:14px;letter-spacing:.02em;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+}
+.box__body{padding:16px;}
+
+/* dashboard cards row */
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:640px){.cards{grid-template-columns:1fr;}}
+.card{border:1px solid var(--line);border-radius:6px;background:var(--panel);padding:18px;}
+.card__label{font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;}
+.card__bias{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:700;font-family:var(--font-display);margin-bottom:12px;}
+.barTrack{height:10px;border-radius:6px;background:var(--panel-2);border:1px solid var(--line);overflow:hidden;}
+.barFill{height:100%;transition:width .25s ease;}
+.card__score{font-size:38px;font-weight:700;font-family:var(--font-display);}
+.card__score.up{color:var(--up);}
+.card__score.down{color:var(--down);}
+.card__score.neutral{color:var(--neutral);}
+
+/* table */
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{
+  text-align:left;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;
+  padding:6px 8px;border-bottom:1px solid var(--line);
+}
+tbody td{padding:9px 8px;border-bottom:1px solid #1a222a;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:var(--panel-2);}
+.newsName{display:flex;align-items:center;gap:8px;}
+.newsName input{
+  background:transparent;border:none;color:var(--text);font-family:var(--font-mono);font-size:13px;
+  width:100%;padding:2px 0;
+}
+.newsName input:focus{outline:none;border-bottom:1px solid var(--focus);}
+
+.resultBtn{
+  width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--panel-2);
+  cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;
+  transition:transform .1s ease,border-color .15s ease;
+}
+.resultBtn:hover{border-color:#3a4854;transform:scale(1.05);}
+.rowActions{display:flex;gap:6px;justify-content:flex-end;}
+.iconBtn{
+  background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:4px 6px;border-radius:4px;
+}
+.iconBtn:hover{color:var(--down);background:rgba(255,92,92,.1);}
+
+.tableFoot{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+  padding:12px 16px;border-top:1px solid var(--line);background:var(--panel-2);font-size:13px;
+}
+.tableFoot b{font-family:var(--font-display);}
+.foot__score.up{color:var(--up);}
+.foot__score.down{color:var(--down);}
+.foot__score.neutral{color:var(--neutral);}
+
+.btn{
+  font-family:var(--font-mono);font-size:12px;border:1px solid var(--line);background:var(--panel-2);
+  color:var(--text);padding:8px 14px;border-radius:4px;cursor:pointer;transition:.15s ease;
+}
+.btn:hover{border-color:#3a4854;}
+.btn--accent{background:var(--up);color:#06110a;border-color:var(--up);font-weight:700;}
+.btn--accent:hover{background:#4de895;}
+.btn--ghost{background:transparent;}
+.addRow{padding:12px 16px;}
+
+/* dashboard mini summary */
+.miniGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:640px){.miniGrid{grid-template-columns:1fr;}}
+.miniList{display:flex;flex-direction:column;gap:8px;}
+.miniItem{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;padding:6px 0;border-bottom:1px solid #1a222a;}
+.miniItem:last-child{border-bottom:none;}
+
+/* history */
+.histEntry{
+  border:1px solid var(--line);border-radius:6px;background:var(--panel);padding:14px 16px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;
+}
+.histEntry__left{display:flex;flex-direction:column;gap:3px;}
+.histEntry__date{font-size:12.5px;color:var(--muted);}
+.histEntry__bias{font-family:var(--font-display);font-weight:700;font-size:15px;}
+.histEntry__score{font-family:var(--font-display);font-size:20px;font-weight:700;}
+.empty{color:var(--muted);text-align:center;padding:24px;font-size:13px;border:1px dashed var(--line);border-radius:6px;}
+
+footer{text-align:center;color:var(--muted);font-size:11px;padding:30px 20px 46px;}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">📊 USD News Predictor Pro <small>bias &amp; skor prediksi rilis data USD</small></div>
+  <nav class="tabs">
+    <button data-tab="dashboard" class="active">Dashboard</button>
+    <button data-tab="nfp">NFP</button>
+    <button data-tab="fomc">FOMC</button>
+    <button data-tab="history">History</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- DASHBOARD -->
+  <section class="view active" id="view-dashboard">
+    <div class="cards">
+      <div class="card">
+        <div class="card__label">Bias USD</div>
+        <div class="card__bias" id="db-bias-text">⚫ Neutral</div>
+        <div class="barTrack"><div class="barFill" id="db-bias-bar" style="width:50%;background:var(--neutral);"></div></div>
+      </div>
+      <div class="card">
+        <div class="card__label">Total Score</div>
+        <div class="card__score neutral" id="db-total-score">0</div>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="box__head">NFP Prediction — ringkasan</div>
+      <div class="box__body miniGrid">
+        <div class="miniList" id="db-nfp-list"></div>
+        <div class="miniList" id="db-fomc-list"></div>
+      </div>
+      <div class="tableFoot">
+        <span>Klik tab <b>NFP</b> / <b>FOMC</b> untuk edit hasil news</span>
+        <button class="btn btn--accent" id="db-save-history">Simpan snapshot hari ini</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- NFP -->
+  <section class="view" id="view-nfp">
+    <div class="box">
+      <div class="box__head">NFP Prediction</div>
+      <div class="box__body" style="padding:0;">
+        <table>
+          <thead><tr><th style="width:60%">News</th><th style="width:20%">Result</th><th></th></tr></thead>
+          <tbody id="nfp-tbody"></tbody>
+        </table>
+        <div class="addRow"><button class="btn btn--ghost" data-add="nfp">+ Tambah news</button></div>
+      </div>
+      <div class="tableFoot">
+        <span>Score : <b class="foot__score" id="nfp-score">+0</b></span>
+        <span>Bias : <b id="nfp-bias">USD Neutral</b></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOMC -->
+  <section class="view" id="view-fomc">
+    <div class="box">
+      <div class="box__head">FOMC Prediction</div>
+      <div class="box__body" style="padding:0;">
+        <table>
+          <thead><tr><th style="width:60%">News</th><th style="width:20%">Result</th><th></th></tr></thead>
+          <tbody id="fomc-tbody"></tbody>
+        </table>
+        <div class="addRow"><button class="btn btn--ghost" data-add="fomc">+ Tambah news</button></div>
+      </div>
+      <div class="tableFoot">
+        <span>Score : <b class="foot__score" id="fomc-score">+0</b></span>
+        <span>Bias : <b id="fomc-bias">USD Neutral</b></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- HISTORY -->
+  <section class="view" id="view-history">
+    <div class="box">
+      <div class="box__head">
+        History
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn--ghost" id="hist-export">Ekspor JSON</button>
+          <button class="btn btn--accent" id="hist-save">Simpan snapshot hari ini</button>
+        </div>
+      </div>
+      <div class="box__body" id="history-list"></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>Data tersimpan otomatis di localStorage browser ini. Klik ikon 🟢/🔴/⚫ untuk mengganti hasil news.</footer>
+
+<script>
+(() => {
+  const STORAGE_KEY = "usdPredictor.v1";
+  const RESULTS = ["neutral","up","down"]; // cycle order
+  const ICON = { up:"🟢", down:"🔴", neutral:"⚫" };
+  const LABEL = { up:"Bullish", down:"Bearish", neutral:"Neutral" };
+
+  const DEFAULTS = {
+    nfp: [
+      "ADP Employment","JOLTS","Initial Jobless Claims","Continuing Claims","ISM Employment"
+    ].map(mkItem),
+    fomc: [
+      "Core PCE","CPI","Core PPI","Retail Sales"
+    ].map(mkItem),
+    history: []
+  };
+
+  function mkItem(name){ return { id: uid(), name, result: "neutral" }; }
+  function uid(){ return Math.random().toString(36).slice(2,9)+Date.now().toString(36); }
+
+  let state = load();
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return structuredClone(DEFAULTS);
+      const parsed = JSON.parse(raw);
+      return {
+        nfp: parsed.nfp?.length ? parsed.nfp : structuredClone(DEFAULTS.nfp),
+        fomc: parsed.fomc?.length ? parsed.fomc : structuredClone(DEFAULTS.fomc),
+        history: parsed.history || []
+      };
+    }catch(e){
+      console.error("Load error:", e);
+      return structuredClone(DEFAULTS);
+    }
+  }
+  function save(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    catch(e){ console.error("Save error:", e); }
+  }
+
+  function scoreOf(list){
+    return list.reduce((s,i)=> s + (i.result==="up"?1: i.result==="down"?-1:0), 0);
+  }
+  function biasOf(score){
+    if(score>0) return {text:"USD Bullish", cls:"up", icon:"🟢"};
+    if(score<0) return {text:"USD Bearish", cls:"down", icon:"🔴"};
+    return {text:"USD Neutral", cls:"neutral", icon:"⚫"};
+  }
+  function fmtScore(n){ return (n>0? "+":"") + n; }
+
+  function escapeHtml(str){
+    const d = document.createElement("div"); d.textContent = str; return d.innerHTML;
+  }
+
+  function renderTable(type){
+    const tbody = document.getElementById(`${type}-tbody`);
+    tbody.innerHTML = "";
+    state[type].forEach(item=>{
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><div class="newsName"><input type="text" value="${escapeHtml(item.name)}" data-id="${item.id}" data-field="name" data-type="${type}"></div></td>
+        <td><button class="resultBtn" data-id="${item.id}" data-type="${type}" title="${LABEL[item.result]}">${ICON[item.result]}</button></td>
+        <td><div class="rowActions"><button class="iconBtn" data-del="${item.id}" data-type="${type}" title="Hapus">✕</button></div></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    const score = scoreOf(state[type]);
+    const bias = biasOf(score);
+    document.getElementById(`${type}-score`).textContent = fmtScore(score);
+    document.getElementById(`${type}-score`).className = `foot__score ${bias.cls}`;
+    document.getElementById(`${type}-bias`).textContent = bias.text;
+  }
+
+  function renderDashboard(){
+    const nfpScore = scoreOf(state.nfp);
+    const fomcScore = scoreOf(state.fomc);
+    const total = nfpScore + fomcScore;
+    const bias = biasOf(total);
+
+    document.getElementById("db-bias-text").textContent = `${bias.icon} ${bias.text.replace("USD ","")}`;
+    const bar = document.getElementById("db-bias-bar");
+    const pct = Math.max(6, Math.min(100, 50 + total*10));
+    bar.style.width = pct + "%";
+    bar.style.background = bias.cls==="up"?"var(--up)": bias.cls==="down"?"var(--down)":"var(--neutral)";
+
+    const scoreEl = document.getElementById("db-total-score");
+    scoreEl.textContent = fmtScore(total);
+    scoreEl.className = `card__score ${bias.cls}`;
+
+    const nfpList = document.getElementById("db-nfp-list");
+    nfpList.innerHTML = `<div class="miniItem" style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;">NFP</div>` +
+      state.nfp.map(i=>`<div class="miniItem"><span>${escapeHtml(i.name)}</span><span>${ICON[i.result]}</span></div>`).join("");
+    const fomcList = document.getElementById("db-fomc-list");
+    fomcList.innerHTML = `<div class="miniItem" style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;">FOMC</div>` +
+      state.fomc.map(i=>`<div class="miniItem"><span>${escapeHtml(i.name)}</span><span>${ICON[i.result]}</span></div>`).join("");
+  }
+
+  function renderHistory(){
+    const list = document.getElementById("history-list");
+    if(state.history.length===0){
+      list.innerHTML = `<div class="empty">Belum ada snapshot. Klik "Simpan snapshot hari ini" untuk mencatat bias &amp; score saat ini.</div>`;
+      return;
+    }
+    list.innerHTML = "";
+    [...state.history].reverse().forEach(h=>{
+      const bias = biasOf(h.total);
+      const div = document.createElement("div");
+      div.className = "histEntry";
+      div.innerHTML = `
+        <div class="histEntry__left">
+          <span class="histEntry__date">${h.date}</span>
+          <span class="histEntry__bias" style="color:var(--${bias.cls==='neutral'?'neutral':bias.cls})">${bias.icon} ${bias.text}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;">
+          <span class="histEntry__score" style="color:var(--${bias.cls==='neutral'?'neutral':bias.cls})">${fmtScore(h.total)}</span>
+          <button class="iconBtn" data-delhist="${h.id}" title="Hapus snapshot">✕</button>
+        </div>
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  function renderAll(){
+    renderTable("nfp");
+    renderTable("fomc");
+    renderDashboard();
+    renderHistory();
+  }
+
+  // ---- Event delegation ----
+  document.body.addEventListener("input", (e)=>{
+    if(e.target.matches('input[data-field="name"]')){
+      const {id, type} = e.target.dataset;
+      const item = state[type].find(i=>i.id===id);
+      if(item){ item.name = e.target.value; save(); renderDashboard(); renderHistory(); }
+    }
+  });
+
+  document.body.addEventListener("click",(e)=>{
+    const resBtn = e.target.closest(".resultBtn");
+    if(resBtn){
+      const {id, type} = resBtn.dataset;
+      const item = state[type].find(i=>i.id===id);
+      if(item){
+        const idx = RESULTS.indexOf(item.result);
+        item.result = RESULTS[(idx+1)%RESULTS.length];
+        save(); renderTable(type); renderDashboard();
+      }
+      return;
+    }
+    const delBtn = e.target.closest("[data-del]");
+    if(delBtn){
+      const {del:id, type} = delBtn.dataset;
+      state[type] = state[type].filter(i=>i.id!==id);
+      save(); renderTable(type); renderDashboard();
+      return;
+    }
+    const addBtn = e.target.closest("[data-add]");
+    if(addBtn){
+      const type = addBtn.dataset.add;
+      state[type].push(mkItem("News baru"));
+      save(); renderTable(type); renderDashboard();
+      return;
+    }
+    const delHist = e.target.closest("[data-delhist]");
+    if(delHist){
+      const id = delHist.dataset.delhist;
+      state.history = state.history.filter(h=>h.id!==id);
+      save(); renderHistory();
+      return;
+    }
+    const tabBtn = e.target.closest("nav.tabs button");
+    if(tabBtn){
+      document.querySelectorAll("nav.tabs button").forEach(b=>b.classList.remove("active"));
+      tabBtn.classList.add("active");
+      document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+      document.getElementById(`view-${tabBtn.dataset.tab}`).classList.add("active");
+      return;
+    }
+    if(e.target.id==="db-save-history" || e.target.id==="hist-save"){
+      const nfpScore = scoreOf(state.nfp);
+      const fomcScore = scoreOf(state.fomc);
+      const total = nfpScore + fomcScore;
+      const now = new Date();
+      const dateStr = now.toLocaleDateString("id-ID",{day:"2-digit",month:"short",year:"numeric"}) +
+        " " + now.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"});
+      state.history.push({
+        id: uid(), date: dateStr,
+        nfpScore, fomcScore, total,
+        nfpSnapshot: structuredClone(state.nfp),
+        fomcSnapshot: structuredClone(state.fomc)
+      });
+      save(); renderHistory();
+      alert("Snapshot disimpan ke History.");
+      return;
+    }
+    if(e.target.id==="hist-export"){
+      const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `usd-predictor-${new Date().toISOString().slice(0,10)}.json`;
+      a.click(); URL.revokeObjectURL(url);
+      return;
+    }
+  });
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
